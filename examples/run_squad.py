@@ -37,8 +37,8 @@ from pytorch_transformers import (WEIGHTS_NAME, BertConfig,
                                   XLMConfig, XLMForQuestionAnswering,
                                   XLMTokenizer, XLNetConfig,
                                   XLNetForQuestionAnswering,
-                                  XLNetTokenizer, RobertaTokenizer,
-                                  RobertaConfig, RobertaForQuestionAnswering)
+                                  XLNetTokenizer)#, RobertaTokenizer,
+                                  #RobertaConfig, RobertaForQuestionAnswering)
 
 from pytorch_transformers import AdamW, WarmupLinearSchedule
 
@@ -60,7 +60,7 @@ MODEL_CLASSES = {
     'bert': (BertConfig, BertForQuestionAnswering, BertTokenizer),
     'xlnet': (XLNetConfig, XLNetForQuestionAnswering, XLNetTokenizer),
     'xlm': (XLMConfig, XLMForQuestionAnswering, XLMTokenizer),
-    'roberta': (RobertaConfig, RobertaForQuestionAnswering, RobertaTokenizer),
+    #'roberta': (RobertaConfig, RobertaForQuestionAnswering, RobertaTokenizer),
 }
 
 def set_seed(args):
@@ -292,7 +292,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
                                                 is_training=not evaluate,
                                                 version_2_with_negative=args.version_2_with_negative,
         use_background=args.use_background,
-        last_index=arg.last_index)
+        last_index=args.last_index)
         features = convert_examples_to_features(examples=examples,
                                                 tokenizer=tokenizer,
                                                 max_seq_length=args.max_seq_length,
