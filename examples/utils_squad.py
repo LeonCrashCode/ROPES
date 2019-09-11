@@ -196,9 +196,12 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, use_ba
                                 print('Unable to find answer')
                                 answer_offset = -1
 
+                        
                         answer_length = len(orig_answer_text)
                         start_position = char_to_word_offset[answer_offset]
                         end_position = char_to_word_offset[answer_offset + answer_length - 1]
+
+
                         # Only add answers where the text can be exactly recovered from the
                         # document. If this CAN'T happen it's likely due to weird Unicode
                         # stuff so we will just skip the example.
@@ -263,7 +266,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             orig_to_tok_index.append(len(all_doc_tokens))
             sub_tokens = tokenizer.tokenize(token)
             for sub_token in sub_tokens:
-                tok_to_orig_index.append(i)
+                tok_to_orig_index.append(i) # mapping to the original index (without tokenization) from tok index (with tokenization)
                 all_doc_tokens.append(sub_token)
 
         tok_start_position = None
@@ -281,8 +284,19 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                 all_doc_tokens, tok_start_position, tok_end_position, tokenizer,
                 example.orig_answer_text)
 
+        # 09/11/2019 15:39:03 - INFO - utils_squad -   Jim
+#09/11/2019 15:39:03 - INFO - utils_squad -   559
+#09/11/2019 15:39:03 - INFO - utils_squad -   93
+#09/11/2019 15:39:03 - INFO - utils_squad -   93
+        #logger.info(tok_start_position)
+        #logger.info(tok_end_position)
+        #logger.info(all_doc_tokens[tok_start_position:tok_end_position+1])
+        #exit()
         # The -3 accounts for [CLS], [SEP] and [SEP]
         max_tokens_for_doc = max_seq_length - len(query_tokens) - 3
+
+        if model_type == "roberta":
+            max_tokens_for_doc -= 1 # there are segmentA [SEP] [SEP] segmentB
 
         # We can have documents that are longer than the maximum sequence length.
         # To deal with this we do a sliding window approach, where we take chunks
@@ -399,7 +413,13 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                     end_position = 0
                     span_is_impossible = True
                 else:
-                    doc_offset = len(query_tokens) + 2
+                    doc_offset = len(query_tokens)
+                    if model_type == "xlnet":
+                        doc_offset += 1
+                    elif model_type == "roberta":
+                        doc_offset += 3
+                    else:
+                        doc_offset += 2
                     start_position = tok_start_position - doc_start + doc_offset
                     end_position = tok_end_position - doc_start + doc_offset
 
