@@ -292,13 +292,15 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
                                                 is_training=not evaluate,
                                                 version_2_with_negative=args.version_2_with_negative,
         use_background=args.use_background,
-        last_index=args.last_index)
+        last_index=args.last_index,
+        background_masked_for_answers=args.background_masked_for_answers)
         features = convert_examples_to_features(examples=examples,
                                                 tokenizer=tokenizer,
                                                 max_seq_length=args.max_seq_length,
                                                 doc_stride=args.doc_stride,
                                                 max_query_length=args.max_query_length,
-                                                is_training=not evaluate)
+                                                is_training=not evaluate,
+                                                background_masked_for_answers=args.background_masked_for_answers)
         if args.local_rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)
             torch.save(features, cached_features_file)
@@ -322,7 +324,6 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
         dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,
                                 all_start_positions, all_end_positions,
                                 all_cls_index, all_p_mask)
-
     if output_examples:
         return dataset, examples, features
     return dataset

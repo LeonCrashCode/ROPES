@@ -341,7 +341,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                 segment_ids.append(sequence_b_segment_id)
 
                 if background_masked_for_answers and doc_span_index == 0: # here did not consider sliding windows 
-                    if tok_to_orig_index[split_token_index] <= background_token_length: 
+                    if tok_to_orig_index[split_token_index] <= example.background_token_length: 
                         p_mask.append(1)
                     else:
                         p_mask.append(0)
