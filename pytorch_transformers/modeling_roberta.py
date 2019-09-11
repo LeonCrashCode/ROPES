@@ -336,7 +336,7 @@ class RobertaForSequenceClassification(BertPreTrainedModel):
 @add_start_docstrings("""Roberta Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear layers on top of
     the hidden-states output to compute `span start logits` and `span end logits`). """,
     ROBERTA_START_DOCSTRING, ROBERTA_INPUTS_DOCSTRING)
-class RobertaForQuestionAnswering(RobertaPreTrainedModel):
+class RobertaForQuestionAnswering(BertPreTrainedModel):
     r"""
         **start_positions**: (`optional`) ``torch.LongTensor`` of shape ``(batch_size,)``:
             Labels for position (index) of the start of the labelled span for computing the token classification loss.
@@ -373,6 +373,10 @@ class RobertaForQuestionAnswering(RobertaPreTrainedModel):
         loss, start_scores, end_scores = outputs[:2]
 
     """
+    config_class = RobertaConfig
+    pretrained_model_archive_map = ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP
+    base_model_prefix = "roberta"
+    
     def __init__(self, config):
         super(RobertaForQuestionAnswering, self).__init__(config)
         self.num_labels = config.num_labels
