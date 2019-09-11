@@ -358,7 +358,8 @@ def main():
                         help='If true, append the background before the situation')
     parser.add_argument('--last_index', action='store_true',
                         help='If true, answer offset will match from the last')
-
+    parser.add_argument('--background_masked_for_answers', action='store_true',
+                        help='If true, answer will not be chosen from background, !!! add --last_index')
     parser.add_argument('--null_score_diff_threshold', type=float, default=0.0,
                         help="If null_score - best_non_null is greater than the threshold predict null.")
 

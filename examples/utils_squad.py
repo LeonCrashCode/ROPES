@@ -45,7 +45,8 @@ class SquadExample(object):
                  orig_answer_text=None,
                  start_position=None,
                  end_position=None,
-                 is_impossible=None):
+                 is_impossible=None,
+                 background_token_length=0):
         self.qas_id = qas_id
         self.question_text = question_text
         self.doc_tokens = doc_tokens
@@ -53,6 +54,8 @@ class SquadExample(object):
         self.start_position = start_position
         self.end_position = end_position
         self.is_impossible = is_impossible
+
+        self.background_token_length = background_token_length
 
     def __str__(self):
         return self.__repr__()
@@ -108,7 +111,7 @@ class InputFeatures(object):
         self.is_impossible = is_impossible
 
 
-def read_squad_examples(input_file, is_training, version_2_with_negative, use_background, last_index=False):
+def read_squad_examples(input_file, is_training, version_2_with_negative, use_background, last_index=False, background_masked_for_answers=False):
     """Read a SQuAD json file into a list of SquadExample."""
     with open(input_file, "r", encoding='utf-8') as reader:
         input_data = json.load(reader)["data"]
@@ -175,14 +178,24 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, use_ba
                         answer = qa["answers"][0]
                         orig_answer_text = answer["text"]
                         # answer_offset = answer["answer_start"]
-                        if orig_answer_text in paragraph_text:
-                            if last_index:
-                                answer_offset = len(paragraph_text) - paragraph_text[::-1].index(orig_answer_text[::-1]) - len(orig_answer_text)
+                        if background_masked_for_answers:
+                            if orig_answer_text in (paragraph["situation"] + " " + question_text):
+                                if last_index:
+                                    answer_offset = len(paragraph_text) - paragraph_text[::-1].index(orig_answer_text[::-1]) - len(orig_answer_text)
+                                else:
+                                    answer_offset = paragraph_text.index(orig_answer_text)
                             else:
-                                answer_offset = paragraph_text.index(orig_answer_text)
+                                print('Unable to find answer')
+                                answer_offset = -1
                         else:
-                            print('Unable to find answer')
-                            answer_offset = -1
+                            if orig_answer_text in paragraph_text:
+                                if last_index:
+                                    answer_offset = len(paragraph_text) - paragraph_text[::-1].index(orig_answer_text[::-1]) - len(orig_answer_text)
+                                else:
+                                    answer_offset = paragraph_text.index(orig_answer_text)
+                            else:
+                                print('Unable to find answer')
+                                answer_offset = -1
 
                         answer_length = len(orig_answer_text)
                         start_position = char_to_word_offset[answer_offset]
@@ -212,7 +225,8 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, use_ba
                     orig_answer_text=orig_answer_text,
                     start_position=start_position,
                     end_position=end_position,
-                    is_impossible=is_impossible)
+                    is_impossible=is_impossible,
+                    background_token_length=len(paragraph["background"].split()))
                 examples.append(example)
     return examples
 
@@ -223,7 +237,8 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                                  cls_token='[CLS]', sep_token='[SEP]', pad_token=0,
                                  sequence_a_segment_id=0, sequence_b_segment_id=1,
                                  cls_token_segment_id=0, pad_token_segment_id=0,
-                                 mask_padding_with_zero=True):
+                                 mask_padding_with_zero=True,
+                                 background_masked_for_answers=False):
     """Loads a data file into a list of `InputBatch`s."""
 
     unique_id = 1000000000
@@ -324,7 +339,14 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                 token_is_max_context[len(tokens)] = is_max_context
                 tokens.append(all_doc_tokens[split_token_index])
                 segment_ids.append(sequence_b_segment_id)
-                p_mask.append(0)
+
+                if background_masked_for_answers and doc_span_index == 0: # here did not consider sliding windows 
+                    if tok_to_orig_index[split_token_index] <= background_token_length: 
+                        p_mask.append(1)
+                    else:
+                        p_mask.append(0)
+                else:
+                    p_mask.append(0)
             paragraph_len = doc_span.length
 
             # SEP token
