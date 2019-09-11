@@ -41,6 +41,7 @@ from .modeling_xlm import (XLMConfig, XLMPreTrainedModel , XLMModel,
                            XLMForQuestionAnswering, XLM_PRETRAINED_CONFIG_ARCHIVE_MAP,
                            XLM_PRETRAINED_MODEL_ARCHIVE_MAP)
 from .modeling_roberta import (RobertaConfig, RobertaForMaskedLM, RobertaModel, RobertaForSequenceClassification,
+                               RobertaForQuestionAnswering,
                                ROBERTA_PRETRAINED_CONFIG_ARCHIVE_MAP, ROBERTA_PRETRAINED_MODEL_ARCHIVE_MAP)
 from .modeling_distilbert import (DistilBertConfig, DistilBertForMaskedLM, DistilBertModel,
                                DistilBertForSequenceClassification, DistilBertForQuestionAnswering,
