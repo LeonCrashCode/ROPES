@@ -37,8 +37,8 @@ from pytorch_transformers import (WEIGHTS_NAME, BertConfig,
                                   XLMConfig, XLMForQuestionAnswering,
                                   XLMTokenizer, XLNetConfig,
                                   XLNetForQuestionAnswering,
-                                  XLNetTokenizer)#, RobertaTokenizer,
-                                  #RobertaConfig, RobertaForQuestionAnswering)
+                                  XLNetTokenizer, RobertaTokenizer,
+                                  RobertaConfig, RobertaForQuestionAnswering)
 
 from pytorch_transformers import AdamW, WarmupLinearSchedule
 
@@ -60,7 +60,7 @@ MODEL_CLASSES = {
     'bert': (BertConfig, BertForQuestionAnswering, BertTokenizer),
     'xlnet': (XLNetConfig, XLNetForQuestionAnswering, XLNetTokenizer),
     'xlm': (XLMConfig, XLMForQuestionAnswering, XLMTokenizer),
-    #'roberta': (RobertaConfig, RobertaForQuestionAnswering, RobertaTokenizer),
+    'roberta': (RobertaConfig, RobertaForQuestionAnswering, RobertaTokenizer),
 }
 
 def set_seed(args):
@@ -300,7 +300,8 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
                                                 doc_stride=args.doc_stride,
                                                 max_query_length=args.max_query_length,
                                                 is_training=not evaluate,
-                                                background_masked_for_answers=args.background_masked_for_answers)
+                                                background_masked_for_answers=args.background_masked_for_answers,
+                                                model_type=args.model_type)
         if args.local_rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)
             torch.save(features, cached_features_file)

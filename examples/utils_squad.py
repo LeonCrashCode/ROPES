@@ -163,7 +163,6 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, use_ba
                             doc_tokens[-1] += c
                         prev_is_whitespace = False
                     char_to_word_offset.append(len(doc_tokens) - 1)
-     
                 start_position = None
                 end_position = None
                 orig_answer_text = None
@@ -233,12 +232,12 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, use_ba
 
 def convert_examples_to_features(examples, tokenizer, max_seq_length,
                                  doc_stride, max_query_length, is_training,
-                                 cls_token_at_end=False,
                                  cls_token='[CLS]', sep_token='[SEP]', pad_token=0,
                                  sequence_a_segment_id=0, sequence_b_segment_id=1,
                                  cls_token_segment_id=0, pad_token_segment_id=0,
                                  mask_padding_with_zero=True,
-                                 background_masked_for_answers=False):
+                                 background_masked_for_answers=False,
+                                 model_type=None):
     """Loads a data file into a list of `InputBatch`s."""
 
     unique_id = 1000000000
@@ -312,7 +311,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             p_mask = []
 
             # CLS token at the beginning
-            if not cls_token_at_end:
+            if model_type != "xlnet":
                 tokens.append(cls_token)
                 segment_ids.append(cls_token_segment_id)
                 p_mask.append(0)
@@ -328,6 +327,11 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             tokens.append(sep_token)
             segment_ids.append(sequence_a_segment_id)
             p_mask.append(1)
+
+            if model_type == "roberta":
+                tokens.append(sep_token)
+                segment_ids.append(sequence_b_segment_id)
+                p_mask.append(1)
 
             # Paragraph
             for i in range(doc_span.length):
@@ -355,7 +359,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             p_mask.append(1)
 
             # CLS token at the end
-            if cls_token_at_end:
+            if model_type == "xlnet":
                 tokens.append(cls_token)
                 segment_ids.append(cls_token_segment_id)
                 p_mask.append(0)
@@ -429,7 +433,6 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                     logger.info("end_position: %d" % (end_position))
                     logger.info(
                         "answer: %s" % (answer_text))
-
             features.append(
                 InputFeatures(
                     unique_id=unique_id,
