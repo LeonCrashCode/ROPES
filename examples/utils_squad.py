@@ -108,7 +108,7 @@ class InputFeatures(object):
         self.is_impossible = is_impossible
 
 
-def read_squad_examples(input_file, is_training, version_2_with_negative, use_background):
+def read_squad_examples(input_file, is_training, version_2_with_negative, use_background, last_index=False):
     """Read a SQuAD json file into a list of SquadExample."""
     with open(input_file, "r", encoding='utf-8') as reader:
         input_data = json.load(reader)["data"]
@@ -176,7 +176,10 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, use_ba
                         orig_answer_text = answer["text"]
                         # answer_offset = answer["answer_start"]
                         if orig_answer_text in paragraph_text:
-                            answer_offset = paragraph_text.index(orig_answer_text)
+                            if last_index:
+                                answer_offset = len(paragraph_text) - paragraph_text[::-1].index(orig_answer_text[::-1]) - len(orig_answer_text)
+                            else:
+                                answer_offset = paragraph_text.index(orig_answer_text)
                         else:
                             print('Unable to find answer')
                             answer_offset = -1
