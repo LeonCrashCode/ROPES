@@ -17,7 +17,7 @@ from .modeling_auto import (AutoConfig, AutoModel, AutoModelForSequenceClassific
 from .modeling_bert import (BertConfig, BertPreTrainedModel, BertModel, BertForPreTraining,
                             BertForMaskedLM, BertForNextSentencePrediction,
                             BertForSequenceClassification, BertForMultipleChoice,
-                            BertForTokenClassification, BertForQuestionAnswering,
+                            BertForTokenClassification, BertForTokenClassification2, BertForQuestionAnswering,
                             load_tf_weights_in_bert, BERT_PRETRAINED_MODEL_ARCHIVE_MAP,
                             BERT_PRETRAINED_CONFIG_ARCHIVE_MAP)
 from .modeling_openai import (OpenAIGPTConfig, OpenAIGPTPreTrainedModel, OpenAIGPTModel,

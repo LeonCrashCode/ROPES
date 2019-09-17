@@ -126,9 +126,9 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, use_ba
         for paragraph in entry["paragraphs"]:
             # paragraph_text = paragraph["context"]
             if use_background:
-                paragraph_texts = " ".join(paragraph["background_segs"]) + " " + " ".join(paragraph["situation_segs"])
+                paragraph_texts = paragraph["background"] + " " + paragraph["situation"]
             else:
-                paragraph_texts = " ".join(paragraph["situation_segs"])
+                paragraph_texts = paragraph["situation"]
 
             '''
             doc_tokens = []
@@ -148,7 +148,7 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, use_ba
 
             for qa in paragraph["qas"]:
                 qas_id = qa["id"]
-                question_text = qa["question_segs"]
+                question_text = qa["question"]
                 paragraph_text = paragraph_texts + " " + question_text
                 doc_tokens = []
                 char_to_word_offset = []
@@ -175,10 +175,10 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, use_ba
                             "For training, each question should have exactly 1 answer.")
                     if not is_impossible:
                         answer = qa["answers"][0]
-                        orig_answer_text = answer["text_segs"]
+                        orig_answer_text = answer["text"]
                         # answer_offset = answer["answer_start"]
                         if background_masked_for_answers:
-                            if orig_answer_text in (" ".join(paragraph["situation_segs"]) + " " + question_text):
+                            if orig_answer_text in (paragraph["situation"] + " " + question_text):
                                 if last_index:
                                     answer_offset = len(paragraph_text) - paragraph_text[::-1].index(orig_answer_text[::-1]) - len(orig_answer_text)
                                 else:

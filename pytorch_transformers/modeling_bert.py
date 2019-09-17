@@ -1211,6 +1211,10 @@ class BertForQuestionAnswering(BertPreTrainedModel):
 
         logits = self.qa_outputs(sequence_output)
         start_logits, end_logits = logits.split(1, dim=-1)
+        # print(logits.size())
+        # print(start_logits.size())
+        # print(end_logits.size())
+
         start_logits = start_logits.squeeze(-1)
         end_logits = end_logits.squeeze(-1)
 
@@ -1225,7 +1229,9 @@ class BertForQuestionAnswering(BertPreTrainedModel):
             ignored_index = start_logits.size(1)
             start_positions.clamp_(0, ignored_index)
             end_positions.clamp_(0, ignored_index)
-
+            # print(start_positions)
+            # print(end_positions)
+            # exit()
             loss_fct = CrossEntropyLoss(ignore_index=ignored_index)
             start_loss = loss_fct(start_logits, start_positions)
             end_loss = loss_fct(end_logits, end_positions)
@@ -1233,3 +1239,85 @@ class BertForQuestionAnswering(BertPreTrainedModel):
             outputs = (total_loss,) + outputs
 
         return outputs  # (loss), start_logits, end_logits, (hidden_states), (attentions)
+
+@add_start_docstrings("""Bert Model with a token classification head on top (a linear layer on top of
+    the hidden-states output) e.g. for Named-Entity-Recognition (NER) tasks. """,
+    BERT_START_DOCSTRING, BERT_INPUTS_DOCSTRING)
+class BertForTokenClassification2(BertPreTrainedModel):
+    r"""
+        **labels**: (`optional`) ``torch.LongTensor`` of shape ``(batch_size, sequence_length)``:
+            Labels for computing the token classification loss.
+            Indices should be in ``[0, ..., config.num_labels - 1]``.
+
+    Outputs: `Tuple` comprising various elements depending on the configuration (config) and inputs:
+        **loss**: (`optional`, returned when ``labels`` is provided) ``torch.FloatTensor`` of shape ``(1,)``:
+            Classification loss.
+        **scores**: ``torch.FloatTensor`` of shape ``(batch_size, sequence_length, config.num_labels)``
+            Classification scores (before SoftMax).
+        **hidden_states**: (`optional`, returned when ``config.output_hidden_states=True``)
+            list of ``torch.FloatTensor`` (one for the output of each layer + the output of the embeddings)
+            of shape ``(batch_size, sequence_length, hidden_size)``:
+            Hidden-states of the model at the output of each layer plus the initial embedding outputs.
+        **attentions**: (`optional`, returned when ``config.output_attentions=True``)
+            list of ``torch.FloatTensor`` (one for each layer) of shape ``(batch_size, num_heads, sequence_length, sequence_length)``:
+            Attentions weights after the attention softmax, used to compute the weighted average in the self-attention heads.
+
+    Examples::
+
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        model = BertForTokenClassification.from_pretrained('bert-base-uncased')
+        input_ids = torch.tensor(tokenizer.encode("Hello, my dog is cute")).unsqueeze(0)  # Batch size 1
+        labels = torch.tensor([1] * input_ids.size(1)).unsqueeze(0)  # Batch size 1
+        outputs = model(input_ids, labels=labels)
+        loss, scores = outputs[:2]
+
+    """
+    def __init__(self, config):
+        super(BertForTokenClassification2, self).__init__(config)
+        self.num_labels = config.num_labels
+
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        self.pooling = nn.MaxPool1d(2, stride=1)
+        self.init_weights()
+
+    def forward(self, input_ids, token_type_ids=None, attention_mask=None, label_ids=None, label_mask=None,
+                position_ids=None, head_mask=None):
+        outputs = self.bert(input_ids, position_ids=position_ids, token_type_ids=token_type_ids,
+                            attention_mask=attention_mask, head_mask=head_mask)
+
+        sequence_output = outputs[0]
+
+        sequence_output = self.dropout(sequence_output)
+
+        sequence_output_part1 = self.pooling(sequence_output.transpose(1,2)).transpose(1,2)
+        logits_part1 = self.classifier(sequence_output_part1)
+
+        sequence_output_part2  = sequence_output
+        logits_part2 = self.classifier(sequence_output_part2)
+
+        # print(sequence_output_part1.size())
+        # print(sequence_output_part2.size())
+
+        # print(label_mask[0][0])
+        # print(label_mask[1][0])
+
+        outputs = (logits_part1, logits_part2, ) + outputs[2:]  # add hidden states and attention if they are here
+        if label_ids is not None:
+            loss_fct = CrossEntropyLoss()
+            # Only keep active parts of the loss
+            active_loss = torch.cat((label_mask[0].view(-1), label_mask[1].view(-1))) == 1
+            active_logits = torch.cat((logits_part1.view(-1, self.num_labels), logits_part2.view(-1, self.num_labels)))[active_loss]
+            active_labels = torch.cat((label_ids[0].view(-1), label_ids[1].view(-1)))[active_loss]
+            loss = loss_fct(active_logits, active_labels)
+            # if attention_mask is not None:
+            #     active_loss = attention_mask.view(-1) == 1
+            #     active_logits = logits.view(-1, self.num_labels)[active_loss]
+            #     active_labels = labels.view(-1)[active_loss]
+            #     loss = loss_fct(active_logits, active_labels)
+            # else:
+            #     loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            outputs = (loss,) + outputs
+
+        return outputs  # (loss), scores, (hidden_states), (attentions)
