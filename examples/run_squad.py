@@ -32,13 +32,9 @@ from tqdm import tqdm, trange
 
 from tensorboardX import SummaryWriter
 
-from pytorch_transformers import (WEIGHTS_NAME, BertConfig,
-                                  BertForQuestionAnswering, BertTokenizer,
-                                  XLMConfig, XLMForQuestionAnswering,
-                                  XLMTokenizer, XLNetConfig,
-                                  XLNetForQuestionAnswering,
-                                  XLNetTokenizer, RobertaTokenizer,
-                                  RobertaConfig, RobertaForQuestionAnswering)
+from pytorch_transformers import (WEIGHTS_NAME,
+                                  BertConfig, BertForQuestionAnswering, BertTokenizer,
+                                  RobertaTokenizer, RobertaConfig, RobertaForQuestionAnswering)
 
 from pytorch_transformers import AdamW, WarmupLinearSchedule
 
@@ -54,12 +50,10 @@ from utils_squad_evaluate import EVAL_OPTS, main as evaluate_on_squad
 logger = logging.getLogger(__name__)
 
 ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys()) \
-                  for conf in (BertConfig, XLNetConfig, XLMConfig)), ())
+                  for conf in (BertConfig, RobertaConfig)), ())
 
 MODEL_CLASSES = {
     'bert': (BertConfig, BertForQuestionAnswering, BertTokenizer),
-    'xlnet': (XLNetConfig, XLNetForQuestionAnswering, XLNetTokenizer),
-    'xlm': (XLMConfig, XLMForQuestionAnswering, XLMTokenizer),
     'roberta': (RobertaConfig, RobertaForQuestionAnswering, RobertaTokenizer),
 }
 
@@ -292,8 +286,8 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
                                                 is_training=not evaluate,
                                                 version_2_with_negative=args.version_2_with_negative,
         use_background=args.use_background,
-        last_index=args.last_index,
-        background_masked_for_answers=args.background_masked_for_answers)
+        last_index=args.last_index)
+        # background_masked_for_answers=args.background_masked_for_answers)
         # features = convert_examples_to_features(examples=examples,
         #                                         tokenizer=tokenizer,
         #                                         cls_token=tokenizer.cls_token,
@@ -313,9 +307,8 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
                                                 cls_token=tokenizer.cls_token,
                                                 sep_token=tokenizer.sep_token,
                                                 pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
-                                                cls_token_segment_id=2 if args.model_type in ['xlnet'] else 0,
-                                                pad_token_segment_id=4 if args.model_type in ['xlnet'] else 0,
-                                                background_masked_for_answers=args.background_masked_for_answers,
+                                                cls_token_segment_id=0,
+                                                pad_token_segment_id=0,
                                                 model_type=args.model_type)
         if args.local_rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)

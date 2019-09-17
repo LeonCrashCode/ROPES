@@ -111,7 +111,7 @@ class InputFeatures(object):
         self.is_impossible = is_impossible
 
 
-def read_squad_examples(input_file, is_training, version_2_with_negative, use_background, last_index=False, background_masked_for_answers=False):
+def read_squad_examples(input_file, is_training, version_2_with_negative, use_background, last_index=False):
     """Read a SQuAD json file into a list of SquadExample."""
     with open(input_file, "r", encoding='utf-8') as reader:
         input_data = json.load(reader)["data"]
@@ -177,7 +177,8 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, use_ba
                         answer = qa["answers"][0]
                         orig_answer_text = answer["text_segs"]
                         # answer_offset = answer["answer_start"]
-                        if background_masked_for_answers:
+                        if False:
+                        # if background_masked_for_answers:
                             if orig_answer_text in (" ".join(paragraph["situation_segs"]) + " " + question_text):
                                 if last_index:
                                     answer_offset = len(paragraph_text) - paragraph_text[::-1].index(orig_answer_text[::-1]) - len(orig_answer_text)
@@ -325,11 +326,10 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             p_mask = []
 
             # CLS token at the beginning
-            if model_type != "xlnet":
-                tokens.append(cls_token)
-                segment_ids.append(cls_token_segment_id)
-                p_mask.append(0)
-                cls_index = 0
+            tokens.append(cls_token)
+            segment_ids.append(cls_token_segment_id)
+            p_mask.append(0)
+            cls_index = 0
 
             # Query
             for token in query_tokens:
@@ -358,26 +358,20 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                 tokens.append(all_doc_tokens[split_token_index])
                 segment_ids.append(sequence_b_segment_id)
 
-                if background_masked_for_answers and doc_span_index == 0: # here did not consider sliding windows 
-                    if tok_to_orig_index[split_token_index] <= example.background_token_length: 
-                        p_mask.append(1)
-                    else:
-                        p_mask.append(0)
-                else:
-                    p_mask.append(0)
+                # if background_masked_for_answers and doc_span_index == 0: # here did not consider sliding windows 
+                #     if tok_to_orig_index[split_token_index] <= example.background_token_length: 
+                #         p_mask.append(1)
+                #     else:
+                #         p_mask.append(0)
+                # else:
+                #     p_mask.append(0)
+                p_mask.append(0)
             paragraph_len = doc_span.length
 
             # SEP token
             tokens.append(sep_token)
             segment_ids.append(sequence_b_segment_id)
             p_mask.append(1)
-
-            # CLS token at the end
-            if model_type == "xlnet":
-                tokens.append(cls_token)
-                segment_ids.append(cls_token_segment_id)
-                p_mask.append(0)
-                cls_index = len(tokens) - 1  # Index of classification token
 
             input_ids = tokenizer.convert_tokens_to_ids(tokens)
 
@@ -386,19 +380,11 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
 
             # Zero-pad up to the sequence length.
-            if model_type == "xlnet":
-                pad_length = max_seq_length - len(input_ids)
-                while len(input_ids) < max_seq_length:
-                    input_ids.insert(0, pad_token)
-                    input_mask.insert(0, 0 if mask_padding_with_zero else 1)
-                    segment_ids.insert(0, pad_token_segment_id)
-                    p_mask.insert(0, 1)
-            else:
-                while len(input_ids) < max_seq_length:
-                    input_ids.append(pad_token)
-                    input_mask.append(0 if mask_padding_with_zero else 1)
-                    segment_ids.append(pad_token_segment_id)
-                    p_mask.append(1)
+            while len(input_ids) < max_seq_length:
+                input_ids.append(pad_token)
+                input_mask.append(0 if mask_padding_with_zero else 1)
+                segment_ids.append(pad_token_segment_id)
+                p_mask.append(1)
 
             assert len(input_ids) == max_seq_length
             assert len(input_mask) == max_seq_length
@@ -422,9 +408,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                     span_is_impossible = True
                 else:
                     doc_offset = len(query_tokens)
-                    if model_type == "xlnet":
-                        doc_offset += 1 + pad_length
-                    elif model_type == "roberta":
+                    if model_type == "roberta":
                         doc_offset += 3
                     else:
                         doc_offset += 2
