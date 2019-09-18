@@ -215,7 +215,7 @@ def evaluate(args, model, tokenizer, prefix=""):
             inputs = {'input_ids':      batch[0],
                       'attention_mask': batch[1],
                       # 'token_type_ids': None if args.model_type == 'xlm' else batch[2]  # XLM don't use segment_ids
-                      'token_type_ids': batch[2] 
+                      'token_type_ids':  None if args.model_type == 'roberta' else batch[2]
                       }
             example_indices = batch[3]
             # if args.model_type in ['xlnet', 'xlm']:
