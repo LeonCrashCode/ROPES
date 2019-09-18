@@ -340,7 +340,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
             p_mask.append(1)
 
             if model_type == "roberta":
-                tokens.append(sep_token)
+                tokens.append(cls_token)
                 segment_ids.append(sequence_b_segment_id)
                 p_mask.append(1)
 
@@ -432,8 +432,6 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
                     "input_mask: %s" % " ".join([str(x) for x in input_mask]))
                 logger.info(
                     "segment_ids: %s" % " ".join([str(x) for x in segment_ids]))
-                logger.info(
-                    "p_mask: %s" % " ".join([str(x) for x in p_mask]))
                 if is_training and span_is_impossible:
                     logger.info("impossible example")
                 if is_training and not span_is_impossible:

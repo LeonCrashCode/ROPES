@@ -129,12 +129,13 @@ def train(args, train_dataset, model, tokenizer):
             batch = tuple(t.to(args.device) for t in batch)
             inputs = {'input_ids':       batch[0],
                       'attention_mask':  batch[1], 
-                      'token_type_ids':  None if args.model_type == 'xlm' else batch[2],  
+                      # 'token_type_ids':  None if args.model_type == 'xlm' else batch[2],
+                      'token_type_ids':  None if args.model_type == 'roberta' else batch[2],  
                       'start_positions': batch[3], 
                       'end_positions':   batch[4]}
-            if args.model_type in ['xlnet', 'xlm']:
-                inputs.update({'cls_index': batch[5],
-                               'p_mask':       batch[6]})
+            # if args.model_type in ['xlnet', 'xlm']:
+            #     inputs.update({'cls_index': batch[5],
+            #                    'p_mask':       batch[6]})
             outputs = model(**inputs)
             loss = outputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
 
@@ -213,25 +214,28 @@ def evaluate(args, model, tokenizer, prefix=""):
         with torch.no_grad():
             inputs = {'input_ids':      batch[0],
                       'attention_mask': batch[1],
-                      'token_type_ids': None if args.model_type == 'xlm' else batch[2]  # XLM don't use segment_ids
+                      # 'token_type_ids': None if args.model_type == 'xlm' else batch[2]  # XLM don't use segment_ids
+                      'token_type_ids': batch[2] 
                       }
             example_indices = batch[3]
-            if args.model_type in ['xlnet', 'xlm']:
-                inputs.update({'cls_index': batch[4],
-                               'p_mask':    batch[5]})
+            # if args.model_type in ['xlnet', 'xlm']:
+            #     inputs.update({'cls_index': batch[4],
+            #                    'p_mask':    batch[5]})
             outputs = model(**inputs)
 
         for i, example_index in enumerate(example_indices):
             eval_feature = features[example_index.item()]
             unique_id = int(eval_feature.unique_id)
-            if args.model_type in ['xlnet', 'xlm']:
-                # XLNet uses a more complex post-processing procedure
-                result = RawResultExtended(unique_id            = unique_id,
-                                           start_top_log_probs  = to_list(outputs[0][i]),
-                                           start_top_index      = to_list(outputs[1][i]),
-                                           end_top_log_probs    = to_list(outputs[2][i]),
-                                           end_top_index        = to_list(outputs[3][i]),
-                                           cls_logits           = to_list(outputs[4][i]))
+            if False:
+            # if args.model_type in ['xlnet', 'xlm']:
+            #     # XLNet uses a more complex post-processing procedure
+            #     result = RawResultExtended(unique_id            = unique_id,
+            #                                start_top_log_probs  = to_list(outputs[0][i]),
+            #                                start_top_index      = to_list(outputs[1][i]),
+            #                                end_top_log_probs    = to_list(outputs[2][i]),
+            #                                end_top_index        = to_list(outputs[3][i]),
+            #                                cls_logits           = to_list(outputs[4][i]))
+                pass
             else:
                 result = RawResult(unique_id    = unique_id,
                                    start_logits = to_list(outputs[0][i]),
@@ -246,13 +250,15 @@ def evaluate(args, model, tokenizer, prefix=""):
     else:
         output_null_log_odds_file = None
 
-    if args.model_type in ['xlnet', 'xlm']:
-        # XLNet uses a more complex post-processing procedure
-        write_predictions_extended(examples, features, all_results, args.n_best_size,
-                        args.max_answer_length, output_prediction_file,
-                        output_nbest_file, output_null_log_odds_file, args.predict_file,
-                        model.config.start_n_top, model.config.end_n_top,
-                        args.version_2_with_negative, tokenizer, args.verbose_logging)
+    if False:
+    # if args.model_type in ['xlnet', 'xlm']:
+    #     # XLNet uses a more complex post-processing procedure
+    #     write_predictions_extended(examples, features, all_results, args.n_best_size,
+    #                     args.max_answer_length, output_prediction_file,
+    #                     output_nbest_file, output_null_log_odds_file, args.predict_file,
+    #                     model.config.start_n_top, model.config.end_n_top,
+    #                     args.version_2_with_negative, tokenizer, args.verbose_logging)
+        pass
     else:
         write_predictions(examples, features, all_results, args.n_best_size,
                         args.max_answer_length, args.do_lower_case, output_prediction_file,
